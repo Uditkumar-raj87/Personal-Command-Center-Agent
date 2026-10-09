@@ -188,6 +188,32 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Verify 3D Preview",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"status:%{http_code}\\n",
+				"http://localhost:3001/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Open 3D Preview",
+			"type": "shell",
+			"command": "sh",
+			"args": [
+				"-lc",
+				"$BROWSER https://improved-system-r47xq4jw9qvp3x54-3001.app.github.dev/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
