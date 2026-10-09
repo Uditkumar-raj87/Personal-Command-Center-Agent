@@ -274,6 +274,40 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Run Command Center Preview",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev",
+				"--prefix",
+				"apps/web",
+				"--",
+				"--hostname",
+				"0.0.0.0",
+				"--port",
+				"3002"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Verify Command Center Preview",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"capture:%{http_code}\\n",
+				"http://localhost:3002/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
