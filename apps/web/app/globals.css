@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+body { margin: 0; background: #f5f7fb; color: #102a43; font-family: Georgia, serif; }
+main { max-width: 900px; margin: 0 auto; padding: 3rem 1.25rem; }
+.panel { background: white; border: 1px solid #cbd5e1; padding: 1.5rem; box-shadow: 0 8px 24px #102a4314; }
+label { display: grid; gap: .4rem; font-weight: 700; }
+input, select, textarea, button { font: inherit; padding: .65rem; border: 1px solid #9fb3c8; }
+button { cursor: pointer; background: #0b7285; color: white; border: 0; font-weight: 700; }
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
