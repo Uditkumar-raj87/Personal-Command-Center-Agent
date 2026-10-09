@@ -150,6 +150,44 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Install 3D Preview Dependencies",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"--prefix",
+				"apps/web"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify Redesigned Capture",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"capture:%{http_code}\\n",
+				"http://localhost:3001/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect Preview Error",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"http://localhost:3001/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
