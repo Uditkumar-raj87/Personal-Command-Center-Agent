@@ -19,6 +19,54 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Restart Personal Command Center Preview",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install",
+				"--prefix",
+				"apps/web",
+				"&&",
+				"npm",
+				"run",
+				"dev",
+				"--prefix",
+				"apps/web"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check Personal Command Center Preview",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-I",
+				"--max-time",
+				"10",
+				"http://localhost:3000"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Preview Routes",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"capture:%{http_code} today:%{http_code}\\n",
+				"http://localhost:3000/capture",
+				"http://localhost:3000/today"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
