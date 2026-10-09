@@ -82,6 +82,21 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Check Running Preview",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"status:%{http_code}\\n",
+				"http://localhost:3000/"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
