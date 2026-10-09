@@ -1,33 +1,288 @@
 # Personal Command Center Agent
 
-An approval-first daily planner that turns personal priorities into an explainable schedule without silently changing commitments.
+> A private, approval-first planning copilot that turns priorities, constraints, and available time into an explainable day plan.
+
+Personal Command Center is built around a simple rule: **normal code owns decisions that must be predictable**. A future model-assisted plan can add interpretation and trade-off language, but it must return typed data, preserve every task, expose conflicts, and wait for a human checkpoint before anything becomes a commitment.
+
+## Product preview
+
+The current web experience includes:
+
+- A focused command-center dashboard with an animated Three.js planning core
+- Fast task capture with deadline, duration, energy, and priority inputs
+- Optimistic inbox updates for a quick capture loop
+- A visual distinction between available work, planning signals, and schedule review
+- Responsive navigation for desktop and smaller screens
+
+Run the web preview with `npm run dev --workspace apps/web`, then open `/capture`.
+
+## Core user experience
+
+### Capture
+
+The capture screen is designed for the moment a task enters the user’s head. The user provides a title, optional deadline, estimated duration, energy requirement, and priority tag. The form validates those values with a shared Zod schema before submitting. The new item appears optimistically in the inbox so the interface stays responsive even while the API request is in flight.
+
+### Plan
+
+The planning flow begins with a deterministic baseline. Each task is ranked, placed into the available time window, and returned as a typed schedule proposal. A proposal contains its task identifier, start and end times, reasoning, conflict state, and approval state. This gives the user something inspectable before any model-generated language or recommendation is introduced.
+
+### Review
+
+The Today view is the human checkpoint. A future complete version will show the baseline and agent proposals as an editable timeline, highlight overloaded or deadline-conflicting blocks, and let the user approve, adjust, or defer each decision. The approval event is the only point at which a plan should become a durable commitment.
+
+### End-of-day reflection
+
+At the end of the day, each task can be marked completed or carried over with an optional note. Carry-over is explicit rather than automatic. The resulting summary distinguishes finished work from unfinished work and provides an audit-friendly record of the user’s decision.
+
+## Why this project exists
+
+Most autonomous planner demos optimize for impressive output instead of dependable behavior. They silently drop tasks, invent durations, overbook a day, or write to external systems before the user can inspect the decision.
+
+This project treats planning as decision support:
+
+1. Capture the user’s actual inputs.
+2. Establish a reproducible baseline with ordinary code.
+3. Compare any model proposal against that baseline.
+4. Show reasoning, overloads, and deadline conflicts.
+5. Require explicit approval before a plan is committed.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-	Browser --> API[FastAPI]
-	API --> Core[Deterministic Engine]
-	API --> LLM[Structured LLM Output]
-	Core --> Review[Human Checkpoint]
-	LLM --> Review
-	Review --> DB[(Postgres)]
+	Browser[Next.js command center] --> API[FastAPI]
+	API --> Contracts[Pydantic contracts]
+	Contracts --> Baseline[Deterministic priority engine]
+	Contracts --> Planner[Structured planner adapter]
+	Baseline --> Compare[Baseline vs agent review]
+	Planner --> Compare
+	Compare --> Checkpoint[Human approval checkpoint]
+	Checkpoint --> Store[(PostgreSQL)]
+	Checkpoint --> Audit[Review and audit trail]
 ```
 
-## Private-by-design boundary
+### Current implementation boundary
 
-Tasks, deadlines, estimates, review notes, and audit records are stored locally. A future provider adapter receives only the task context needed for a requested plan and must return validated structured output. No calendar, email, or other write action happens without an explicit approval payload.
+The deterministic engine and provider-neutral structured planner are implemented. The local FastAPI development store is currently in memory so the first vertical slice is easy to run. SQLAlchemy models, an Alembic migration, Docker Compose, and the Postgres environment are scaffolded for the persistence milestone.
+
+## Repository map
+
+```text
+apps/web/                  Next.js dashboard, capture flow, and 3D focus visual
+services/api/              FastAPI routes, persistence models, migrations, seed data
+packages/core/             Pydantic contracts and deterministic planning engine
+packages/agent/            Typed planner response and orchestration boundary
+tests/evals/               Synthetic scenario fixtures and evaluation assertions
+infra/                     Local Postgres, API, and web Docker Compose setup
+```
 
 ## Quick start
 
-1. Clone this repository and copy `.env.example` to `.env`.
-2. Run `docker compose -f infra/docker-compose.yml up --build`.
-3. Run `python services/api/scripts/seed_demo.py` from the repository root.
+### 1. Prepare the environment
 
-## Layout
+```bash
+git clone <repository-url>
+cd Personal-Command-Center-Agent
+cp .env.example .env
+```
 
-`apps/web` contains the Next.js interface. `services/api` contains FastAPI routes, persistence models, migrations, and seed data. `packages/core` owns Pydantic contracts and the deterministic baseline. `packages/agent` owns provider-neutral structured orchestration. `tests/evals` contains synthetic scenario fixtures.
+### 2. Start the local stack
+
+```bash
+docker compose -f infra/docker-compose.yml up --build
+```
+
+The web app is available at `http://localhost:3000`. The API is available at `http://localhost:8000/docs`.
+
+### 3. Seed synthetic demo tasks
+
+In a second terminal, run:
+
+```bash
+python services/api/scripts/seed_demo.py
+```
+
+The seed creates 15 realistic but synthetic tasks and does not require private credentials or external services.
+
+### Frontend-only preview
+
+When Docker is unavailable:
+
+```bash
+npm install --prefix apps/web
+npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000
+```
+
+Open `http://localhost:3000/capture`. In a hosted development environment, forward the selected port through the editor’s Ports panel.
+
+## Deterministic planning baseline
+
+`packages/core/priority.py` is a pure function: it receives tasks and planning constraints and returns `TaskScheduleProposal` objects without making network calls or mutating storage.
+
+The current scoring model combines three transparent signals:
+
+| Signal | Behavior |
+| --- | --- |
+| Priority tag | `urgent_important`, `important`, `routine`, and `low` receive descending base weights |
+| Deadline urgency | Tasks with deadlines closer to the planning start receive additional weight |
+| Energy match | A task matching the requested focus energy receives a bonus; high-energy work in a low-energy window is penalized |
+
+After ranking, the scheduler places tasks sequentially from `available_start`. A 10-minute buffer is inserted between non-conflicting blocks. A task is marked with `conflict_flag=true` when its estimated end exceeds the available budget or its hard deadline. Overloaded tasks retain their original duration and receive the exact reason `Day overloaded: exceeded available time budget`.
+
+This design makes the baseline easy to test, explain, and compare. It also provides a meaningful fallback when a model provider is unavailable or returns invalid structured data.
+
+### Example proposal
+
+```json
+{
+	"task_id": "8b3d1f91-94e1-4bc8-a43b-bac9a16b7b2f",
+	"proposed_start": "2026-10-09T09:00:00Z",
+	"proposed_end": "2026-10-09T09:45:00Z",
+	"reasoning": "Priority important; energy match: true",
+	"conflict_flag": false,
+	"user_approved": false
+}
+```
+
+The baseline does not claim that a score is objectively correct. It makes the trade-off visible, reproducible, and editable by the person who owns the day.
+
+## Shared data contracts
+
+The backend uses Pydantic v2 models and the frontend mirrors the input contract with Zod. The central `Task` model includes:
+
+- Identity and timestamps: UUID, creation time, and update time
+- Work description: title and optional description
+- Planning inputs: optional deadline, estimated minutes, energy level, and priority tag
+- Lifecycle state: inbox, scheduled, completed, or carried over
+- Provenance: manual note, web form, or inbox
+
+`TaskScheduleProposal` intentionally keeps planning separate from the task itself. A schedule proposal can be rejected or replaced without rewriting the user’s original task data.
+
+The structured planner response adds a day summary, planned blocks, an optional overload warning, deferred task IDs, and a trade-off rationale. Returning this response as a Pydantic instance prevents raw untyped dictionaries from crossing the agent boundary.
+
+## API surface
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/tasks` | Add a typed task to the inbox |
+| `GET` | `/api/tasks` | List captured tasks |
+| `POST` | `/api/plans/generate` | Compare deterministic and structured plans |
+| `POST` | `/api/plans/review` | Record completion or carry-over decisions |
+
+All plan proposals use Pydantic models. The review route only changes task status from an explicit user payload; it does not reschedule work autonomously.
+
+### Generate a plan
+
+```bash
+curl -X POST http://localhost:8000/api/plans/generate \
+	-H 'Content-Type: application/json' \
+	-d '{
+		"date": "2026-10-09",
+		"available_hours": 6,
+		"energy_level": "medium",
+		"task_ids": []
+	}'
+```
+
+The response is intentionally side by side:
+
+```json
+{
+	"baseline": [],
+	"agent": {
+		"day_summary": "Proposed 0 of 0 tasks with explicit conflicts.",
+		"planned_blocks": [],
+		"overload_warning": null,
+		"deferred_tasks": [],
+		"trade_off_rationale": "The structured planner preserves every task and exposes baseline conflicts for human review."
+	}
+}
+```
+
+If structured validation fails, the API returns a 422 response with the deterministic baseline available for safe recovery. The intended production behavior is to show that fallback directly in the review interface rather than leave the user with an empty plan.
+
+### Submit an end-of-day review
+
+```bash
+curl -X POST http://localhost:8000/api/plans/review \
+	-H 'Content-Type: application/json' \
+	-d '[
+		{"task_id": "8b3d1f91-94e1-4bc8-a43b-bac9a16b7b2f", "completed": true},
+		{"task_id": "6e5f0c6a-1f18-47ab-9c6d-8f0d5e1f3a12", "completed": false, "notes": "Waiting for review input"}
+	]'
+```
+
+The review response reports completed and carried-over counts. It does not silently create a new schedule.
+
+## Privacy and safety boundary
+
+- Stored data: task titles, descriptions, deadlines, estimates, energy, status, review notes, and audit records
+- Provider boundary: a future LLM adapter receives only the context needed for a requested plan
+- Structured output: provider responses must validate against `DailyPlanResponse`
+- Human control: calendar, email, social, and other write actions are out of scope until an approval event exists
+- Demo data: seed records are synthetic and contain no personal information
+
+The model is an interpreter and drafting assistant. Permissions, validation, scheduling arithmetic, storage, and irreversible actions belong to normal application code.
+
+## Quality checks
+
+```bash
+pytest
+```
+
+Fixtures cover overloaded days, conflicting deadlines, default estimates, low-energy windows, and balanced schedules. Core assertions check that every input task remains represented and that every proposal contains reasoning.
+
+### Evaluation principles
+
+The planning evaluator is deliberately behavioral rather than stylistic. A plan is not considered reliable merely because its prose sounds confident. The important assertions are:
+
+1. **No lost tasks:** scheduled, deferred, and explicitly conflicted tasks must account for every input task.
+2. **Deadline honesty:** a block must not pass a hard deadline without an explicit conflict flag.
+3. **Reason transparency:** every proposal must include a non-empty reason that can be shown to the user.
+4. **Estimate integrity:** the planner must not shorten an estimate to make an overloaded day appear feasible.
+5. **Human checkpoint:** no review flow should change a commitment without an explicit user payload.
+
+### Useful development commands
+
+```bash
+# Install frontend dependencies
+npm install --prefix apps/web
+
+# Run the web app on a hosted-friendly interface
+npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000
+
+# Run the Python test suite
+pytest
+
+# Inspect API documentation while the service is running
+open http://localhost:8000/docs
+```
+
+The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Pydantic, SQLAlchemy, Alembic, and development test dependencies.
+
+## Roadmap
+
+- [x] Monorepo blueprint and shared contracts
+- [x] Deterministic priority and scheduling baseline
+- [x] Responsive task capture experience
+- [x] Structured planner response boundary
+- [x] Synthetic evaluation fixtures
+- [ ] Connect SQLAlchemy repositories to the API routes
+- [ ] Add a real provider SDK adapter with strict JSON schema output
+- [ ] Complete interactive timeline adjustments and approval persistence
+- [ ] Add Playwright flows and trace-backed evaluation reports
+- [ ] Add calendar and email integrations after permission and audit UX is mature
 
 ## Known limitations
 
-The current local API uses an in-memory task store until database wiring is enabled. The deterministic baseline uses explicit estimates and flags overloads rather than truncating tasks. Missing estimates default to 30 minutes, deadline conflicts are surfaced, and the structured planner is a provider-neutral fallback until credentials and an SDK adapter are configured.
+The current API task store is process-local and resets when the server restarts. SQLAlchemy models and the review-log migration exist, but repository wiring is not complete yet. The Docker Postgres service therefore provides the development infrastructure without making persistence claims that the current API cannot fulfill.
+
+The provider planner is intentionally a deterministic fallback until an LLM SDK adapter is configured. The agent package defines the structured response boundary and prompt responsibilities, but it does not yet call an external model. This keeps the first release usable without credentials and makes baseline behavior testable in isolation.
+
+The Today page is currently a visual approval placeholder. Database commits, drag-to-reorder interactions, inline time edits, audit-log persistence, and full TanStack Query state management are the next implementation slice. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+
+This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
+
+## License
+
+This repository is a personal portfolio project. Add a license before distributing it as a reusable package.
