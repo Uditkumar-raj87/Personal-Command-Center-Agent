@@ -67,6 +67,21 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Verify Preview Root",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"root:%{http_code} redirect:%{redirect_url}\\n",
+				"http://localhost:3000/"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
