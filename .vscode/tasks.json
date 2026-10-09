@@ -214,6 +214,66 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Check Local App",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"port3001:%{http_code}\\n",
+				"http://localhost:3001/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Alternate App Port",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"port3000:%{http_code}\\n",
+				"http://localhost:3000/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Public Tunnel",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"public:%{http_code}\\n",
+				"https://improved-system-r47xq4jw9qvp3x54-3001.app.github.dev/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check Public Port 3000",
+			"type": "shell",
+			"command": "curl",
+			"args": [
+				"-sS",
+				"-o",
+				"/dev/null",
+				"-w",
+				"public3000:%{http_code}\\n",
+				"https://improved-system-r47xq4jw9qvp3x54-3000.app.github.dev/capture"
+			],
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
