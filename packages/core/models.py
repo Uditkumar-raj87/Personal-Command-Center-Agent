@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from enum import StrEnum
 from typing import Optional
 from uuid import UUID, uuid4
@@ -57,3 +57,28 @@ class TaskScheduleProposal(BaseModel):
     reasoning: str = Field(min_length=1)
     conflict_flag: bool = False
     user_approved: bool = False
+
+
+class PlanningConstraints(BaseModel):
+    planning_date: date
+    available_start: datetime
+    available_hours: float = Field(gt=0, le=24)
+    energy_level: EnergyLevel
+
+    @property
+    def available_end(self) -> datetime:
+        return self.available_start + timedelta(hours=self.available_hours)
+
+
+class DailyPlanResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    day_summary: str = Field(min_length=1)
+    planned_blocks: list[TaskScheduleProposal] = Field(default_factory=list)
+    overload_warning: str | None = None
+    deferred_tasks: list[UUID] = Field(default_factory=list)
+    conflicted_tasks: list[UUID] = Field(default_factory=list)
+    trade_off_rationale: str = Field(min_length=1)
+    provider: str = "deterministic"
+    model: str | None = None
+    fallback_reason: str | None = None
