@@ -2,7 +2,7 @@
 
 > A private, approval-first planning copilot that turns priorities, constraints, and available time into an explainable day plan.
 
-Personal Command Center is built around a simple rule: **normal code owns decisions that must be predictable**. A future model-assisted plan can add interpretation and trade-off language, but it must return typed data, preserve every task, expose conflicts, and wait for a human checkpoint before anything becomes a commitment.
+Personal Command Center is built around a simple rule: **normal code owns decisions that must be predictable**. The configured provider can add interpretation and trade-off language, but it must return typed data, preserve every task, expose conflicts, and wait for a human checkpoint before anything becomes a commitment.
 
 ## Product preview
 
@@ -10,7 +10,7 @@ The current web experience includes:
 
 - A focused command-center dashboard with an animated Three.js planning core
 - Fast task capture with deadline, duration, energy, and priority inputs
-- Optimistic inbox updates for a quick capture loop
+- Server-backed inbox updates with clear API errors
 - A visual distinction between available work, planning signals, and schedule review
 - Responsive navigation for desktop and smaller screens
 
@@ -20,15 +20,15 @@ Run the web preview with `npm run dev --workspace apps/web`, then open `/capture
 
 ### Capture
 
-The capture screen is designed for the moment a task enters the user’s head. The user provides a title, optional deadline, estimated duration, energy requirement, and priority tag. The form validates those values with a shared Zod schema before submitting. The new item appears optimistically in the inbox so the interface stays responsive even while the API request is in flight.
+The capture screen is designed for the moment a task enters the user’s head. The user provides a title, optional deadline, estimated duration, energy requirement, and priority tag. The form validates those values with a shared Zod schema before submitting, then refreshes from the API after create and delete operations.
 
 ### Plan
 
-The planning flow begins with a deterministic baseline. Each task is ranked, placed into the available time window, and returned as a typed schedule proposal. A proposal contains its task identifier, start and end times, reasoning, conflict state, and approval state. This gives the user something inspectable before any model-generated language or recommendation is introduced.
+The planning flow begins with a deterministic baseline. Each task is ranked, placed into the available time window, and returned as a typed schedule proposal. A configured OpenAI-compatible provider may produce a second proposal, but every response is validated against the same safety rules and falls back to the baseline on failure.
 
 ### Review
 
-The Today view is the human checkpoint. A future complete version will show the baseline and agent proposals as an editable timeline, highlight overloaded or deadline-conflicting blocks, and let the user approve, adjust, or defer each decision. The approval event is the only point at which a plan should become a durable commitment.
+The Today view is the human checkpoint. It shows baseline and provider proposals side by side, allows block time edits and reordering, highlights conflicts and fallback status, and requires explicit approval before a plan becomes a durable commitment.
 
 ### End-of-day reflection
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ### Current implementation boundary
 
-The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, and web capture/review flow are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
+The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, complete capture-to-review web flow, API integration tests, and Playwright coverage are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
 
 ## Repository map
 
@@ -72,7 +72,9 @@ apps/web/                  Next.js dashboard, capture flow, and 3D focus visual
 services/api/              FastAPI routes, persistence models, migrations, seed data
 packages/core/             Pydantic contracts and deterministic planning engine
 packages/agent/            Typed planner response and orchestration boundary
+tests/api/                 FastAPI integration tests
 tests/evals/               Synthetic scenario fixtures and evaluation assertions
+apps/web/e2e/              Playwright capture-to-review flow
 infra/                     Local Postgres, API, and web Docker Compose setup
 ```
 
@@ -116,6 +118,12 @@ npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000
 ```
 
 Open `http://localhost:3000/capture`. In a hosted development environment, forward the selected port through the editor’s Ports panel.
+
+Apply database migrations manually when running the API outside Docker:
+
+```bash
+alembic -c services/api/alembic.ini upgrade head
+```
 
 ## Deterministic planning baseline
 
@@ -177,6 +185,7 @@ The structured planner response adds a day summary, planned blocks, an optional 
 | `POST` | `/api/plans/{plan_id}/review` | Record completion or carry-over decisions |
 | `GET` | `/api/plans/{plan_id}/audit` | Read the audit history |
 | `GET` | `/health` and `/ready` | Liveness and database readiness |
+| `GET` | `/api/info` | API metadata and web route hint |
 
 All plan proposals use Pydantic models. The review route only changes task status from an explicit user payload; it does not reschedule work autonomously.
 
@@ -198,7 +207,7 @@ The response is intentionally side by side:
 ```json
 {
 	"baseline": [],
-	"agent": {
+	"proposal": {
 		"day_summary": "Proposed 0 of 0 tasks with explicit conflicts.",
 		"planned_blocks": [],
 		"overload_warning": null,
@@ -213,7 +222,7 @@ Provider timeouts, authentication failures, retry exhaustion, malformed JSON, or
 ### Submit an end-of-day review
 
 ```bash
-curl -X POST http://localhost:8000/api/plans/review \
+curl -X POST http://localhost:8000/api/plans/{plan_id}/review \
 	-H 'Content-Type: application/json' \
 	-d '[
 		{"task_id": "8b3d1f91-94e1-4bc8-a43b-bac9a16b7b2f", "completed": true},
@@ -221,14 +230,15 @@ curl -X POST http://localhost:8000/api/plans/review \
 	]'
 ```
 
-The review response reports completed and carried-over counts. It does not silently create a new schedule.
+The review endpoint requires an approved plan, updates task status to `completed` or `carried_over`, persists notes, records an audit event, and moves the plan to `COMPLETED`. It does not silently create a new schedule.
 
 ## Privacy and safety boundary
 
 - Stored data: task titles, descriptions, deadlines, estimates, energy, status, review notes, and audit records
-- Provider boundary: a future LLM adapter receives only the context needed for a requested plan
+- Provider boundary: the configured adapter receives only the context needed for a requested plan and the deterministic baseline
 - Structured output: provider responses must validate against `DailyPlanResponse`
-- Human control: calendar, email, social, and other write actions are out of scope until an approval event exists
+- Identity boundary: the default `development-user` scope can be overridden with `X-User-ID`; this is a development boundary, not production authentication
+- Human control: calendar, email, social, and other external write actions are not implemented
 - Demo data: seed records are synthetic and contain no personal information
 
 The model is an interpreter and drafting assistant. Permissions, validation, scheduling arithmetic, storage, and irreversible actions belong to normal application code.
@@ -237,6 +247,11 @@ The model is an interpreter and drafting assistant. Permissions, validation, sch
 
 ```bash
 pytest
+
+# Run browser coverage (install Chromium once)
+npm install --prefix apps/web
+npx --prefix apps/web playwright install chromium
+npm run test:e2e --prefix apps/web
 ```
 
 Fixtures cover overloaded days, conflicting deadlines, default estimates, low-energy windows, and balanced schedules. Core assertions check that every input task remains represented and that every proposal contains reasoning.
@@ -267,7 +282,7 @@ pytest
 open http://localhost:8000/docs
 ```
 
-The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL, and development test dependencies.
+The repository uses separate JavaScript and Python dependency manifests. The web package declares Next.js, React, Zod, Three.js, and Playwright. The Python package declares FastAPI, Uvicorn, Pydantic, SQLAlchemy, Alembic, PostgreSQL, and development test dependencies.
 
 ## Provider configuration
 
@@ -287,8 +302,8 @@ Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED
 - [x] Connect SQLAlchemy repositories to the API routes
 - [x] Add an OpenAI-compatible adapter with strict JSON validation
 - [x] Complete approval persistence and audit records
-- [ ] Add drag-and-drop timeline editing and Playwright flows
-- [ ] Add Playwright flows and trace-backed evaluation reports
+- [x] Add editable timeline blocks and Playwright capture-to-review flow
+- [x] Add API integration and trace-backed browser evaluation coverage
 - [ ] Add calendar and email integrations after permission and audit UX is mature
 
 ## Known limitations
