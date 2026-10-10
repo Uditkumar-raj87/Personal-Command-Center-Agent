@@ -63,7 +63,11 @@ flowchart LR
 
 ### Current implementation boundary
 
-The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, complete capture-to-review web flow, API integration tests, and Playwright coverage are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
+The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, complete capture-to-review web flow, API integration tests, interactive Three.js planning scene, and Playwright coverage are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
+
+The dashboard's planning core renders live inbox tasks as priority-colored nodes, supports hover details and selection, honors reduced-motion preferences, adapts particle density for smaller screens, and falls back to an accessible static message when WebGL is unavailable. Timeline blocks support inline start/end editing and reordering before approval.
+
+CI runs backend tests, a frontend production build, and Chromium Playwright coverage. Calendar and email integrations, autonomous external writes, production authentication, and tenant isolation remain intentionally out of scope for this approval-first MVP.
 
 ## Repository map
 
@@ -314,4 +318,4 @@ This project is not an autonomous calendar assistant. It does not send email, ed
 
 ## License
 
-This repository is a personal portfolio project. Add a license before distributing it as a reusable package.
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
