@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 packages/__init__.py
@@ -5,6 +6,7 @@ packages/agent/__init__.py
 packages/agent/planner.py
 packages/agent/prompts.py
 packages/agent/provider.py
+packages/agent/tests/test_provider.py
 packages/core/__init__.py
 packages/core/db_models.py
 packages/core/models.py
