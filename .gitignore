@@ -5,3 +5,5 @@ __pycache__/
 node_modules/
 .next/
 *.pyc
+*.db
+apps/web/test-results/

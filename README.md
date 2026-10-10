@@ -94,7 +94,7 @@ For local development without Docker, use `DATABASE_URL=sqlite:///./command_cent
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-The web app is available at `http://localhost:3000`. The API is available at `http://localhost:8000/docs`.
+The web app is available at `http://localhost:3000/capture`. The API is available at `http://localhost:8000/docs`; the API root shows service links rather than the web UI.
 
 ### 3. Seed synthetic demo tasks
 
@@ -293,7 +293,7 @@ Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED
 
 ## Known limitations
 
-The development identity is single-user only; production authentication and tenant isolation remain future work. The Today UI supports task selection, generation, side-by-side comparison, approval, and rejection; drag-to-reorder and inline time editing remain limited. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+The development identity is single-user only; production authentication and tenant isolation remain future work. `X-User-ID` can select a development scope, but it is not authentication. The Today UI supports task selection, generation, side-by-side comparison, block time editing, reordering, approval, rejection, and end-of-day completion/carry-over review. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
 
 This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
 
