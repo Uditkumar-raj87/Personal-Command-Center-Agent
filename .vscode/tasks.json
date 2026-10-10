@@ -308,6 +308,14 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Run Personal Command Center preview",
+			"type": "shell",
+			"command": "npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
