@@ -64,7 +64,7 @@ flowchart LR
 
 ### Current implementation boundary
 
-The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, and web capture/review flow are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
+The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, and web capture/review flow are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. API records are scoped to the authenticated bearer identity; local development uses `DEV_OWNER_ID` when `AUTH_REQUIRED=false`.
 
 ## Repository map
 
@@ -306,7 +306,7 @@ Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED
 
 ## Known limitations
 
-The development identity is still single-user only. Records carry an owner key and repository queries are scoped to it, but production login/session handling, identity-provider integration, authorization middleware, and tenant administration are not implemented. Do not describe this as a secure multi-user application until those controls are added. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+The API is identity-provider ready but does not bundle a login screen or validate provider tokens itself. Set `AUTH_REQUIRED=true` behind a trusted identity proxy or add JWT/OIDC verification before production deployment. Repository queries are owner-scoped, but tenant administration and account lifecycle remain deployment responsibilities. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
 
 This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
 

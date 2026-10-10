@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import date, datetime, time, timezone
 from enum import StrEnum
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
 from packages.agent import generate_plan
@@ -15,8 +17,9 @@ from packages.core.validation import validate_plan_response
 
 from .repository import Repository, SessionLocal
 
-app = FastAPI(title="Personal Command Center API", version="0.2.0")
+app = FastAPI(title="Personal Command Center API", version="0.3.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
+bearer = HTTPBearer(auto_error=False)
 
 
 class PlanStatus(StrEnum):
@@ -60,10 +63,18 @@ class ReviewItem(BaseModel):
     notes: str | None = None
 
 
-def repository():
+def current_owner(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> str:
+    if credentials and credentials.scheme.lower() == "bearer" and credentials.credentials.strip():
+        return credentials.credentials.strip()
+    if os.getenv("AUTH_REQUIRED", "false").lower() == "true":
+        raise HTTPException(401, "Authentication required", headers={"WWW-Authenticate": "Bearer"})
+    return os.getenv("DEV_OWNER_ID", "development-user")
+
+
+def repository(owner_id: str = Depends(current_owner)):
     session = SessionLocal()
     try:
-        yield Repository(session)
+        yield Repository(session, owner_id)
     finally:
         session.close()
 
