@@ -63,7 +63,7 @@ flowchart LR
 
 ### Current implementation boundary
 
-The deterministic engine and provider-neutral structured planner are implemented. The local FastAPI development store is currently in memory so the first vertical slice is easy to run. SQLAlchemy models, an Alembic migration, Docker Compose, and the Postgres environment are scaffolded for the persistence milestone.
+The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, and web capture/review flow are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. Authentication is currently a single development identity, not a multi-user security boundary.
 
 ## Repository map
 
@@ -85,6 +85,8 @@ git clone <repository-url>
 cd Personal-Command-Center-Agent
 cp .env.example .env
 ```
+
+For local development without Docker, use `DATABASE_URL=sqlite:///./command_center.db` in `.env`.
 
 ### 2. Start the local stack
 
@@ -166,8 +168,15 @@ The structured planner response adds a day summary, planned blocks, an optional 
 | --- | --- | --- |
 | `POST` | `/api/tasks` | Add a typed task to the inbox |
 | `GET` | `/api/tasks` | List captured tasks |
-| `POST` | `/api/plans/generate` | Compare deterministic and structured plans |
-| `POST` | `/api/plans/review` | Record completion or carry-over decisions |
+| `GET/PATCH/DELETE` | `/api/tasks/{task_id}` | Read, edit, or delete a task |
+| `POST` | `/api/plans/generate` | Compare deterministic and provider plans |
+| `GET` | `/api/plans` and `/api/plans/{plan_id}` | List or retrieve plans |
+| `PATCH` | `/api/plans/{plan_id}/blocks` | Save reviewed block edits |
+| `POST` | `/api/plans/{plan_id}/approve` | Explicitly approve a plan |
+| `POST` | `/api/plans/{plan_id}/reject` | Reject a plan |
+| `POST` | `/api/plans/{plan_id}/review` | Record completion or carry-over decisions |
+| `GET` | `/api/plans/{plan_id}/audit` | Read the audit history |
+| `GET` | `/health` and `/ready` | Liveness and database readiness |
 
 All plan proposals use Pydantic models. The review route only changes task status from an explicit user payload; it does not reschedule work autonomously.
 
@@ -199,7 +208,7 @@ The response is intentionally side by side:
 }
 ```
 
-If structured validation fails, the API returns a 422 response with the deterministic baseline available for safe recovery. The intended production behavior is to show that fallback directly in the review interface rather than leave the user with an empty plan.
+Provider timeouts, authentication failures, retry exhaustion, malformed JSON, or unsafe plans fall back to the deterministic proposal with a non-secret `fallback_reason`. Every provider response is checked for task accounting, estimates, deadlines, overlaps, planning-window bounds, reasoning, and unsupported action claims.
 
 ### Submit an end-of-day review
 
@@ -258,7 +267,15 @@ pytest
 open http://localhost:8000/docs
 ```
 
-The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Pydantic, SQLAlchemy, Alembic, and development test dependencies.
+The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL, and development test dependencies.
+
+## Provider configuration
+
+The provider factory reads `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT_SECONDS`, and `LLM_MAX_RETRIES`. Use `LLM_PROVIDER=deterministic` for offline operation. Use `LLM_PROVIDER=openai-compatible` with a compatible base URL, model, and key for structured JSON proposals. Secrets are not logged.
+
+## Approval workflow
+
+Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED` states. Generation persists both the deterministic baseline and provider proposal. Edits create audit records, approval is explicit and idempotent, and reviews update task status only after the review payload is submitted. Calendar, email, social, scraping, browser automation, and autonomous external writes are not implemented.
 
 ## Roadmap
 
@@ -267,19 +284,16 @@ The repository uses separate JavaScript and Python dependency manifests. The web
 - [x] Responsive task capture experience
 - [x] Structured planner response boundary
 - [x] Synthetic evaluation fixtures
-- [ ] Connect SQLAlchemy repositories to the API routes
-- [ ] Add a real provider SDK adapter with strict JSON schema output
-- [ ] Complete interactive timeline adjustments and approval persistence
+- [x] Connect SQLAlchemy repositories to the API routes
+- [x] Add an OpenAI-compatible adapter with strict JSON validation
+- [x] Complete approval persistence and audit records
+- [ ] Add drag-and-drop timeline editing and Playwright flows
 - [ ] Add Playwright flows and trace-backed evaluation reports
 - [ ] Add calendar and email integrations after permission and audit UX is mature
 
 ## Known limitations
 
-The current API task store is process-local and resets when the server restarts. SQLAlchemy models and the review-log migration exist, but repository wiring is not complete yet. The Docker Postgres service therefore provides the development infrastructure without making persistence claims that the current API cannot fulfill.
-
-The provider planner is intentionally a deterministic fallback until an LLM SDK adapter is configured. The agent package defines the structured response boundary and prompt responsibilities, but it does not yet call an external model. This keeps the first release usable without credentials and makes baseline behavior testable in isolation.
-
-The Today page is currently a visual approval placeholder. Database commits, drag-to-reorder interactions, inline time edits, audit-log persistence, and full TanStack Query state management are the next implementation slice. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+The development identity is single-user only; production authentication and tenant isolation remain future work. The Today UI supports task selection, generation, side-by-side comparison, approval, and rejection; drag-to-reorder and inline time editing remain limited. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
 
 This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
 

@@ -23,4 +23,4 @@ include = ["packages*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["packages/core/tests", "tests/evals"]
+testpaths = ["packages/core/tests", "packages/agent/tests", "tests/evals"]
