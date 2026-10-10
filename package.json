@@ -5,6 +5,12 @@
   "scripts": {
     "dev": "npm --workspace apps/web run dev",
     "build": "npm --workspace apps/web run build",
-    "test": "pytest"
+    "typecheck": "npm --workspace apps/web run typecheck",
+    "test": "pytest",
+    "test:e2e": "playwright test",
+    "audit": "npm audit --audit-level=high"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
   }
 }

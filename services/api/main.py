@@ -44,6 +44,16 @@ class BlockUpdate(BaseModel):
     conflict_flag: bool = False
 
 
+class TaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=240)
+    description: str | None = None
+    deadline: datetime | None = None
+    estimated_minutes: int | None = Field(default=None, ge=1, le=1440)
+    energy_level: EnergyLevel | None = None
+    priority_tag: str | None = None
+    status: str | None = None
+
+
 class ReviewItem(BaseModel):
     task_id: UUID
     completed: bool
@@ -92,12 +102,12 @@ def get_task(task_id: UUID, repo: Repository = Depends(repository)) -> Task:
 
 
 @app.patch("/api/tasks/{task_id}", response_model=Task)
-def update_task(task_id: UUID, changes: dict, repo: Repository = Depends(repository)) -> Task:
+def update_task(task_id: UUID, changes: TaskUpdate, repo: Repository = Depends(repository)) -> Task:
     task = repo.get_task(task_id)
     if task is None:
         raise HTTPException(404, "Task not found")
     try:
-        updated = Task.model_validate(task.model_copy(update={**changes, "updated_at": datetime.now(timezone.utc)}))
+        updated = Task.model_validate(task.model_copy(update={**changes.model_dump(exclude_unset=True), "updated_at": datetime.now(timezone.utc)}))
     except ValueError as exc:
         raise HTTPException(422, "Invalid task") from exc
     return repo.save_task(updated)
@@ -146,16 +156,19 @@ def edit_blocks(plan_id: UUID, blocks: list[BlockUpdate], repo: Repository = Dep
     if record.status in {PlanStatus.APPROVED, PlanStatus.REJECTED, PlanStatus.COMPLETED}:
         raise HTTPException(409, "Plan can no longer be edited")
     proposal = DailyPlanResponse.model_validate(json.loads(record.proposal_json)).model_copy(update={"planned_blocks": [TaskScheduleProposal.model_validate(block.model_dump()) for block in blocks]})
-    tasks = [repo.get_task(block.task_id) for block in blocks]
-    tasks = [task for task in tasks if task]
-    constraints = PlanningConstraints(planning_date=record.planning_date.date(), available_start=datetime.combine(record.planning_date.date(), time(9), tzinfo=timezone.utc), available_hours=24, energy_level=EnergyLevel.MEDIUM)
+    proposal_task_ids = set(proposal.deferred_tasks) | set(proposal.conflicted_tasks) | {block.task_id for block in proposal.planned_blocks}
+    tasks = [repo.get_task(task_id) for task_id in proposal_task_ids]
+    if any(task is None for task in tasks):
+        raise HTTPException(422, "Plan references an unknown task ID")
+    constraints = PlanningConstraints(planning_date=record.planning_date.date(), available_start=datetime.combine(record.planning_date.date(), time(9), tzinfo=timezone.utc), available_hours=8, energy_level=EnergyLevel.MEDIUM)
     try:
         validate_plan_response(proposal, tasks, constraints)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     record.proposal_json = proposal.model_dump_json()
     record.status = PlanStatus.EDITED
-    repo.audit(plan_id, "blocks_edited", {"count": len(blocks)})
+    record.updated_at = datetime.now(timezone.utc)
+    repo.audit(plan_id, "blocks_edited", {"count": len(blocks), "blocks": [block.model_dump(mode="json") for block in blocks]})
     repo.session.commit()
     return plan_payload(record)
 
@@ -171,7 +184,8 @@ def approve(plan_id: UUID, repo: Repository = Depends(repository)) -> dict:
         raise HTTPException(409, "Only generated or edited plans can be approved")
     record.selected_json = record.proposal_json
     record.status = PlanStatus.APPROVED
-    repo.audit(plan_id, "approved", {})
+    record.updated_at = datetime.now(timezone.utc)
+    repo.audit(plan_id, "approved", {"selected": json.loads(record.selected_json)})
     repo.session.commit()
     return plan_payload(record)
 
@@ -196,7 +210,7 @@ def review(plan_id: UUID, items: list[ReviewItem], repo: Repository = Depends(re
     for item in items:
         if repo.get_task(item.task_id) is None:
             raise HTTPException(422, "Unknown task ID")
-        repo.review(item.task_id, item.completed, item.notes)
+        repo.review(item.task_id, item.completed, item.notes, commit=False)
     repo.audit(plan_id, "reviewed", {"items": len(items)})
     repo.session.commit()
     return {"completed": sum(item.completed for item in items), "carried_over": sum(not item.completed for item in items)}

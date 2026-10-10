@@ -1,0 +1,347 @@
+{
+  "fixture": "overloaded_day.json",
+  "generated_at": "2026-10-10T10:49:19.949243+00:00",
+  "input_tasks": [
+    {
+      "id": "44b17dd8-b21e-4c8a-9c2d-3ade3baa8623",
+      "title": "Task 1",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949013Z",
+      "updated_at": "2026-10-10T10:49:19.949015Z"
+    },
+    {
+      "id": "b1573f7e-30f1-4772-add5-393608e57f4e",
+      "title": "Task 2",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949023Z",
+      "updated_at": "2026-10-10T10:49:19.949023Z"
+    },
+    {
+      "id": "58465c65-6a68-416f-aebf-37c6cc07a3cb",
+      "title": "Task 3",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949029Z",
+      "updated_at": "2026-10-10T10:49:19.949029Z"
+    },
+    {
+      "id": "3b31f754-9888-4791-aa72-d41ef8cc6cef",
+      "title": "Task 4",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949034Z",
+      "updated_at": "2026-10-10T10:49:19.949035Z"
+    },
+    {
+      "id": "e12ffe62-9e25-43c7-b420-f0a89d87a034",
+      "title": "Task 5",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949039Z",
+      "updated_at": "2026-10-10T10:49:19.949040Z"
+    },
+    {
+      "id": "c4a06194-68a6-48b3-b5bf-205605a95d84",
+      "title": "Task 6",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949046Z",
+      "updated_at": "2026-10-10T10:49:19.949046Z"
+    },
+    {
+      "id": "c58106e5-4e0c-4acb-a969-827472f563ff",
+      "title": "Task 7",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949051Z",
+      "updated_at": "2026-10-10T10:49:19.949052Z"
+    },
+    {
+      "id": "c684de38-2da4-4ad5-886e-404cf725cc27",
+      "title": "Task 8",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949056Z",
+      "updated_at": "2026-10-10T10:49:19.949057Z"
+    }
+  ],
+  "deterministic_baseline": {
+    "day_summary": "Proposed 3 of 8 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "44b17dd8-b21e-4c8a-9c2d-3ade3baa8623",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T10:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "b1573f7e-30f1-4772-add5-393608e57f4e",
+        "proposed_start": "2026-01-01T10:40:00Z",
+        "proposed_end": "2026-01-01T12:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "58465c65-6a68-416f-aebf-37c6cc07a3cb",
+        "proposed_start": "2026-01-01T12:20:00Z",
+        "proposed_end": "2026-01-01T13:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "3b31f754-9888-4791-aa72-d41ef8cc6cef",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "e12ffe62-9e25-43c7-b420-f0a89d87a034",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c4a06194-68a6-48b3-b5bf-205605a95d84",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c58106e5-4e0c-4acb-a969-827472f563ff",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c684de38-2da4-4ad5-886e-404cf725cc27",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": "Some tasks need review.",
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "provider_response": {
+    "day_summary": "Proposed 3 of 8 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "44b17dd8-b21e-4c8a-9c2d-3ade3baa8623",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T10:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "b1573f7e-30f1-4772-add5-393608e57f4e",
+        "proposed_start": "2026-01-01T10:40:00Z",
+        "proposed_end": "2026-01-01T12:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "58465c65-6a68-416f-aebf-37c6cc07a3cb",
+        "proposed_start": "2026-01-01T12:20:00Z",
+        "proposed_end": "2026-01-01T13:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "3b31f754-9888-4791-aa72-d41ef8cc6cef",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "e12ffe62-9e25-43c7-b420-f0a89d87a034",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c4a06194-68a6-48b3-b5bf-205605a95d84",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c58106e5-4e0c-4acb-a969-827472f563ff",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c684de38-2da4-4ad5-886e-404cf725cc27",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": "Some tasks need review.",
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "validation": {
+    "status": "passed",
+    "error": null
+  },
+  "fallback_reason": null,
+  "final_user_approved_plan": {
+    "day_summary": "Proposed 3 of 8 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "44b17dd8-b21e-4c8a-9c2d-3ade3baa8623",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T10:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "b1573f7e-30f1-4772-add5-393608e57f4e",
+        "proposed_start": "2026-01-01T10:40:00Z",
+        "proposed_end": "2026-01-01T12:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "58465c65-6a68-416f-aebf-37c6cc07a3cb",
+        "proposed_start": "2026-01-01T12:20:00Z",
+        "proposed_end": "2026-01-01T13:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "3b31f754-9888-4791-aa72-d41ef8cc6cef",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "e12ffe62-9e25-43c7-b420-f0a89d87a034",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c4a06194-68a6-48b3-b5bf-205605a95d84",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c58106e5-4e0c-4acb-a969-827472f563ff",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      },
+      {
+        "task_id": "c684de38-2da4-4ad5-886e-404cf725cc27",
+        "proposed_start": "2026-01-01T14:00:00Z",
+        "proposed_end": "2026-01-01T15:30:00Z",
+        "reasoning": "Day overloaded: exceeded available time budget",
+        "conflict_flag": true,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": "Some tasks need review.",
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "evaluation": {
+    "accounted_task_ratio": 1.0,
+    "passed": true
+  }
+}

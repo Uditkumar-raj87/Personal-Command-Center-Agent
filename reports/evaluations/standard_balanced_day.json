@@ -1,0 +1,162 @@
+{
+  "fixture": "standard_balanced_day.json",
+  "generated_at": "2026-10-10T10:49:19.949914+00:00",
+  "input_tasks": [
+    {
+      "id": "4bd9f3a3-4722-48ae-a9f5-04f53b811075",
+      "title": "Plan",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 30,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949769Z",
+      "updated_at": "2026-10-10T10:49:19.949770Z"
+    },
+    {
+      "id": "c7d33846-e534-4534-aadb-c59daa3f3fd6",
+      "title": "Build",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 90,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949778Z",
+      "updated_at": "2026-10-10T10:49:19.949779Z"
+    },
+    {
+      "id": "6d309447-d325-48ae-92a4-001c8963c5c3",
+      "title": "Review",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 30,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.949784Z",
+      "updated_at": "2026-10-10T10:49:19.949785Z"
+    }
+  ],
+  "deterministic_baseline": {
+    "day_summary": "Proposed 3 of 3 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "4bd9f3a3-4722-48ae-a9f5-04f53b811075",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "c7d33846-e534-4534-aadb-c59daa3f3fd6",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T11:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "6d309447-d325-48ae-92a4-001c8963c5c3",
+        "proposed_start": "2026-01-01T11:20:00Z",
+        "proposed_end": "2026-01-01T11:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "provider_response": {
+    "day_summary": "Proposed 3 of 3 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "4bd9f3a3-4722-48ae-a9f5-04f53b811075",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "c7d33846-e534-4534-aadb-c59daa3f3fd6",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T11:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "6d309447-d325-48ae-92a4-001c8963c5c3",
+        "proposed_start": "2026-01-01T11:20:00Z",
+        "proposed_end": "2026-01-01T11:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "validation": {
+    "status": "passed",
+    "error": null
+  },
+  "fallback_reason": null,
+  "final_user_approved_plan": {
+    "day_summary": "Proposed 3 of 3 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "4bd9f3a3-4722-48ae-a9f5-04f53b811075",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "c7d33846-e534-4534-aadb-c59daa3f3fd6",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T11:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "6d309447-d325-48ae-92a4-001c8963c5c3",
+        "proposed_start": "2026-01-01T11:20:00Z",
+        "proposed_end": "2026-01-01T11:50:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "evaluation": {
+    "accounted_task_ratio": 1.0,
+    "passed": true
+  }
+}

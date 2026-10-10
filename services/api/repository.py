@@ -16,20 +16,20 @@ def _database_url() -> str:
     return os.getenv("DATABASE_URL", "sqlite:///./command_center.db")
 
 
+DEV_OWNER_ID = os.getenv("DEV_OWNER_ID", "development-user")
+
+
 engine = create_engine(_database_url(), connect_args={"check_same_thread": False} if _database_url().startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
-Base.metadata.create_all(engine)
-
-
 class Repository:
     def __init__(self, session: Session):
         self.session = session
 
     def tasks(self) -> list[Task]:
-        return [Task.model_validate(record, from_attributes=True) for record in self.session.scalars(select(TaskRecord)).all()]
+        return [Task.model_validate(record, from_attributes=True) for record in self.session.scalars(select(TaskRecord).where(TaskRecord.owner_id == DEV_OWNER_ID).order_by(TaskRecord.created_at.desc())).all()]
 
     def get_task(self, task_id: UUID) -> Task | None:
-        record = self.session.get(TaskRecord, str(task_id))
+        record = self.session.scalar(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.owner_id == DEV_OWNER_ID))
         return Task.model_validate(record, from_attributes=True) if record else None
 
     def save_task(self, task: Task) -> Task:
@@ -37,7 +37,7 @@ class Repository:
         values = task.model_dump()
         values["id"] = str(task.id)
         if record is None:
-            self.session.add(TaskRecord(**values))
+            self.session.add(TaskRecord(**values, owner_id=DEV_OWNER_ID))
         else:
             for key, value in values.items():
                 setattr(record, key, value)
@@ -45,7 +45,7 @@ class Repository:
         return task
 
     def delete_task(self, task_id: UUID) -> bool:
-        record = self.session.get(TaskRecord, str(task_id))
+        record = self.session.scalar(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.owner_id == DEV_OWNER_ID))
         if record is None:
             return False
         self.session.delete(record)
@@ -56,27 +56,28 @@ class Repository:
         plan_id = uuid4()
         now = datetime.now(timezone.utc)
         plan_timestamp = planning_date if isinstance(planning_date, datetime) else datetime.combine(planning_date, datetime.min.time(), tzinfo=timezone.utc)
-        self.session.add(PlanRecord(id=str(plan_id), planning_date=plan_timestamp, status="GENERATED", baseline_json=json.dumps(baseline), proposal_json=json.dumps(proposal), created_at=now, updated_at=now))
+        self.session.add(PlanRecord(id=str(plan_id), owner_id=DEV_OWNER_ID, planning_date=plan_timestamp, status="GENERATED", baseline_json=json.dumps(baseline), proposal_json=json.dumps(proposal), created_at=now, updated_at=now))
         self.audit(plan_id, "generated", {"provider": proposal.get("provider", "deterministic")})
         self.session.commit()
         return plan_id
 
     def get_plan(self, plan_id: UUID) -> PlanRecord | None:
-        return self.session.get(PlanRecord, str(plan_id))
+        return self.session.scalar(select(PlanRecord).where(PlanRecord.id == str(plan_id), PlanRecord.owner_id == DEV_OWNER_ID))
 
     def plans(self) -> list[PlanRecord]:
-        return list(self.session.scalars(select(PlanRecord).order_by(PlanRecord.created_at.desc())).all())
+        return list(self.session.scalars(select(PlanRecord).where(PlanRecord.owner_id == DEV_OWNER_ID).order_by(PlanRecord.created_at.desc())).all())
 
     def audit(self, plan_id: UUID | None, action: str, details: dict) -> None:
-        self.session.add(AuditRecord(plan_id=str(plan_id) if plan_id else None, action=action, details=json.dumps(details), created_at=datetime.now(timezone.utc)))
+        self.session.add(AuditRecord(plan_id=str(plan_id) if plan_id else None, owner_id=DEV_OWNER_ID, action=action, details=json.dumps(details), created_at=datetime.now(timezone.utc)))
 
     def logs(self, plan_id: UUID) -> list[AuditRecord]:
-        return list(self.session.scalars(select(AuditRecord).where(AuditRecord.plan_id == str(plan_id)).order_by(AuditRecord.created_at)).all())
+        return list(self.session.scalars(select(AuditRecord).where(AuditRecord.plan_id == str(plan_id), AuditRecord.owner_id == DEV_OWNER_ID).order_by(AuditRecord.created_at)).all())
 
-    def review(self, task_id: UUID, completed: bool, notes: str | None) -> None:
-        task = self.session.get(TaskRecord, str(task_id))
+    def review(self, task_id: UUID, completed: bool, notes: str | None, commit: bool = True) -> None:
+        task = self.session.scalar(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.owner_id == DEV_OWNER_ID))
         if task:
             task.status = "COMPLETED" if completed else "CARRIED_OVER"
             task.updated_at = datetime.now(timezone.utc)
-            self.session.add(ReviewLog(task_id=str(task_id), completed=completed, notes=notes, created_at=datetime.now(timezone.utc)))
-            self.session.commit()
+            self.session.add(ReviewLog(task_id=str(task_id), owner_id=DEV_OWNER_ID, completed=completed, notes=notes, created_at=datetime.now(timezone.utc)))
+            if commit:
+                self.session.commit()

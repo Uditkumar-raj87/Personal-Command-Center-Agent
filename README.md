@@ -13,6 +13,7 @@ The current web experience includes:
 - Optimistic inbox updates for a quick capture loop
 - A visual distinction between available work, planning signals, and schedule review
 - Responsive navigation for desktop and smaller screens
+- An editable proposal timeline with drag-and-drop, keyboard reordering, inline times, overlap warnings, undo/revert, and audit history
 
 Run the web preview with `npm run dev --workspace apps/web`, then open `/capture`.
 
@@ -86,7 +87,7 @@ cd Personal-Command-Center-Agent
 cp .env.example .env
 ```
 
-For local development without Docker, use `DATABASE_URL=sqlite:///./command_center.db` in `.env`.
+For local development without Docker, use `DATABASE_URL=sqlite:///./command_center.db` in `.env`, then apply the schema with `alembic -c services/api/alembic.ini upgrade head`. Alembic is the schema authority; the API does not create tables during import.
 
 ### 2. Start the local stack
 
@@ -237,6 +238,17 @@ The model is an interpreter and drafting assistant. Permissions, validation, sch
 
 ```bash
 pytest
+
+# Frontend typecheck and production build
+npm run typecheck
+npm run build
+
+# Browser flow (requires the API on port 8000)
+npx playwright install chromium
+npm run test:e2e
+
+# Trace-backed reports for every synthetic fixture
+python services/api/scripts/generate_evaluation_report.py
 ```
 
 Fixtures cover overloaded days, conflicting deadlines, default estimates, low-energy windows, and balanced schedules. Core assertions check that every input task remains represented and that every proposal contains reasoning.
@@ -287,16 +299,17 @@ Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED
 - [x] Connect SQLAlchemy repositories to the API routes
 - [x] Add an OpenAI-compatible adapter with strict JSON validation
 - [x] Complete approval persistence and audit records
-- [ ] Add drag-and-drop timeline editing and Playwright flows
-- [ ] Add Playwright flows and trace-backed evaluation reports
+- [x] Add drag-and-drop timeline editing and Playwright flows
+- [x] Add Playwright flows and trace-backed evaluation reports
+- [x] Add migration-owned schema, ownership-ready records, and CI verification
 - [ ] Add calendar and email integrations after permission and audit UX is mature
 
 ## Known limitations
 
-The development identity is single-user only; production authentication and tenant isolation remain future work. The Today UI supports task selection, generation, side-by-side comparison, approval, and rejection; drag-to-reorder and inline time editing remain limited. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+The development identity is still single-user only. Records carry an owner key and repository queries are scoped to it, but production login/session handling, identity-provider integration, authorization middleware, and tenant administration are not implemented. Do not describe this as a secure multi-user application until those controls are added. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
 
 This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
 
 ## License
 
-This repository is a personal portfolio project. Add a license before distributing it as a reusable package.
+This repository is licensed under the MIT License. See [LICENSE](LICENSE).

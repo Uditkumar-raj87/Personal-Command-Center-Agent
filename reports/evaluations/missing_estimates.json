@@ -1,0 +1,125 @@
+{
+  "fixture": "missing_estimates.json",
+  "generated_at": "2026-10-10T10:49:19.948631+00:00",
+  "input_tasks": [
+    {
+      "id": "00f54dd3-fcc4-44c5-bfbf-5a880e0874cc",
+      "title": "Default A",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 30,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.948500Z",
+      "updated_at": "2026-10-10T10:49:19.948501Z"
+    },
+    {
+      "id": "46c5b9ca-143d-44e7-8d44-ef612abcab2a",
+      "title": "Default B",
+      "description": null,
+      "deadline": null,
+      "estimated_minutes": 30,
+      "energy_level": "medium",
+      "priority_tag": "routine",
+      "status": "inbox",
+      "source": "manual_note",
+      "created_at": "2026-10-10T10:49:19.948510Z",
+      "updated_at": "2026-10-10T10:49:19.948511Z"
+    }
+  ],
+  "deterministic_baseline": {
+    "day_summary": "Proposed 2 of 2 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "00f54dd3-fcc4-44c5-bfbf-5a880e0874cc",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "46c5b9ca-143d-44e7-8d44-ef612abcab2a",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T10:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "provider_response": {
+    "day_summary": "Proposed 2 of 2 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "00f54dd3-fcc4-44c5-bfbf-5a880e0874cc",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "46c5b9ca-143d-44e7-8d44-ef612abcab2a",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T10:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "validation": {
+    "status": "passed",
+    "error": null
+  },
+  "fallback_reason": null,
+  "final_user_approved_plan": {
+    "day_summary": "Proposed 2 of 2 tasks.",
+    "planned_blocks": [
+      {
+        "task_id": "00f54dd3-fcc4-44c5-bfbf-5a880e0874cc",
+        "proposed_start": "2026-01-01T09:00:00Z",
+        "proposed_end": "2026-01-01T09:30:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      },
+      {
+        "task_id": "46c5b9ca-143d-44e7-8d44-ef612abcab2a",
+        "proposed_start": "2026-01-01T09:40:00Z",
+        "proposed_end": "2026-01-01T10:10:00Z",
+        "reasoning": "Priority routine; energy match: True",
+        "conflict_flag": false,
+        "user_approved": false
+      }
+    ],
+    "overload_warning": null,
+    "deferred_tasks": [],
+    "conflicted_tasks": [],
+    "trade_off_rationale": "The deterministic baseline preserves estimates and exposes deadline or capacity conflicts.",
+    "provider": "deterministic",
+    "model": null,
+    "fallback_reason": null
+  },
+  "evaluation": {
+    "accounted_task_ratio": 1.0,
+    "passed": true
+  }
+}

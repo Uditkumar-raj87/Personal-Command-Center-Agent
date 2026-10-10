@@ -41,7 +41,7 @@ def validate_plan_response(
         raise ValueError("A task cannot be both deferred and conflicted")
 
     previous_end: datetime | None = None
-    for block in plan.planned_blocks:
+    for block in sorted(plan.planned_blocks, key=lambda item: item.proposed_start):
         task = task_by_id[block.task_id]
         if block.proposed_end <= block.proposed_start:
             raise ValueError("Block end must be after block start")
