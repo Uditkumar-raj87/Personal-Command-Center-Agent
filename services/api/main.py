@@ -5,8 +5,9 @@ from datetime import date, datetime, time, timezone
 from enum import StrEnum
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from packages.agent import generate_plan
@@ -69,9 +70,17 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/")
-def root() -> dict[str, str]:
-    return {"service": "Personal Command Center API", "docs": "/docs", "web": "http://localhost:3000/capture"}
+@app.get("/", include_in_schema=False)
+def root(request: Request) -> RedirectResponse:
+    host = request.headers.get("host", "localhost:8000")
+    web_host = host.replace("-8000.", "-3000.").replace(":8000", ":3000")
+    scheme = request.url.scheme
+    return RedirectResponse(url=f"{scheme}://{web_host}/capture")
+
+
+@app.get("/api/info")
+def info() -> dict[str, str]:
+    return {"service": "Personal Command Center API", "docs": "/docs", "web": "/capture on port 3000"}
 
 
 @app.get("/ready")
