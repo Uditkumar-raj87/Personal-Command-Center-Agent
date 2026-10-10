@@ -15,6 +15,7 @@ class TaskRecord(Base):
     __tablename__ = "tasks"
 
     id: Mapped[UUID] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(120), nullable=False, default="development-user")
     title: Mapped[str] = mapped_column(String(240), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -41,6 +42,7 @@ class PlanRecord(Base):
     __tablename__ = "plans"
 
     id: Mapped[UUID] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(120), nullable=False, default="development-user")
     planning_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     baseline_json: Mapped[str] = mapped_column(Text, nullable=False)

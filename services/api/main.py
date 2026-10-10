@@ -14,6 +14,8 @@ from packages.core.models import DailyPlanResponse, EnergyLevel, PlanningConstra
 from packages.core.validation import validate_plan_response
 
 from .repository import Repository, SessionLocal
+from .identity import current_user_id
+from .schemas import TaskUpdate
 
 app = FastAPI(title="Personal Command Center API", version="0.2.0")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
@@ -50,10 +52,10 @@ class ReviewItem(BaseModel):
     notes: str | None = None
 
 
-def repository():
+def repository(user_id: str = Depends(current_user_id)):
     session = SessionLocal()
     try:
-        yield Repository(session)
+        yield Repository(session, user_id)
     finally:
         session.close()
 
@@ -65,6 +67,11 @@ def plan_payload(record) -> dict:
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"service": "Personal Command Center API", "docs": "/docs", "web": "http://localhost:3000/capture"}
 
 
 @app.get("/ready")
@@ -92,12 +99,12 @@ def get_task(task_id: UUID, repo: Repository = Depends(repository)) -> Task:
 
 
 @app.patch("/api/tasks/{task_id}", response_model=Task)
-def update_task(task_id: UUID, changes: dict, repo: Repository = Depends(repository)) -> Task:
+def update_task(task_id: UUID, changes: TaskUpdate, repo: Repository = Depends(repository)) -> Task:
     task = repo.get_task(task_id)
     if task is None:
         raise HTTPException(404, "Task not found")
     try:
-        updated = Task.model_validate(task.model_copy(update={**changes, "updated_at": datetime.now(timezone.utc)}))
+        updated = Task.model_validate(task.model_copy(update={**changes.model_dump(exclude_unset=True), "updated_at": datetime.now(timezone.utc)}))
     except ValueError as exc:
         raise HTTPException(422, "Invalid task") from exc
     return repo.save_task(updated)
@@ -146,7 +153,8 @@ def edit_blocks(plan_id: UUID, blocks: list[BlockUpdate], repo: Repository = Dep
     if record.status in {PlanStatus.APPROVED, PlanStatus.REJECTED, PlanStatus.COMPLETED}:
         raise HTTPException(409, "Plan can no longer be edited")
     proposal = DailyPlanResponse.model_validate(json.loads(record.proposal_json)).model_copy(update={"planned_blocks": [TaskScheduleProposal.model_validate(block.model_dump()) for block in blocks]})
-    tasks = [repo.get_task(block.task_id) for block in blocks]
+    proposal_ids = {block.task_id for block in proposal.planned_blocks} | set(proposal.deferred_tasks) | set(proposal.conflicted_tasks)
+    tasks = [repo.get_task(task_id) for task_id in proposal_ids]
     tasks = [task for task in tasks if task]
     constraints = PlanningConstraints(planning_date=record.planning_date.date(), available_start=datetime.combine(record.planning_date.date(), time(9), tzinfo=timezone.utc), available_hours=24, energy_level=EnergyLevel.MEDIUM)
     try:
@@ -191,15 +199,19 @@ def reject(plan_id: UUID, repo: Repository = Depends(repository)) -> dict:
 
 @app.post("/api/plans/{plan_id}/review")
 def review(plan_id: UUID, items: list[ReviewItem], repo: Repository = Depends(repository)) -> dict:
-    if repo.get_plan(plan_id) is None:
+    record = repo.get_plan(plan_id)
+    if record is None:
         raise HTTPException(404, "Plan not found")
+    if record.status != PlanStatus.APPROVED:
+        raise HTTPException(409, "Only approved plans can be reviewed")
     for item in items:
         if repo.get_task(item.task_id) is None:
             raise HTTPException(422, "Unknown task ID")
         repo.review(item.task_id, item.completed, item.notes)
     repo.audit(plan_id, "reviewed", {"items": len(items)})
+    record.status = PlanStatus.COMPLETED
     repo.session.commit()
-    return {"completed": sum(item.completed for item in items), "carried_over": sum(not item.completed for item in items)}
+    return {**plan_payload(record), "summary": {"completed": sum(item.completed for item in items), "carried_over": sum(not item.completed for item in items)}}
 
 
 @app.get("/api/plans/{plan_id}/audit")

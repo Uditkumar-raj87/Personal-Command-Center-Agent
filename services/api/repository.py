@@ -22,20 +22,22 @@ Base.metadata.create_all(engine)
 
 
 class Repository:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, user_id: str = "development-user"):
         self.session = session
+        self.user_id = user_id
 
     def tasks(self) -> list[Task]:
-        return [Task.model_validate(record, from_attributes=True) for record in self.session.scalars(select(TaskRecord)).all()]
+        return [Task.model_validate(record, from_attributes=True) for record in self.session.scalars(select(TaskRecord).where(TaskRecord.user_id == self.user_id)).all()]
 
     def get_task(self, task_id: UUID) -> Task | None:
-        record = self.session.get(TaskRecord, str(task_id))
+        record = self.session.scalars(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.user_id == self.user_id)).first()
         return Task.model_validate(record, from_attributes=True) if record else None
 
     def save_task(self, task: Task) -> Task:
         record = self.session.get(TaskRecord, str(task.id))
         values = task.model_dump()
         values["id"] = str(task.id)
+        values["user_id"] = self.user_id
         if record is None:
             self.session.add(TaskRecord(**values))
         else:
@@ -45,7 +47,7 @@ class Repository:
         return task
 
     def delete_task(self, task_id: UUID) -> bool:
-        record = self.session.get(TaskRecord, str(task_id))
+        record = self.session.scalars(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.user_id == self.user_id)).first()
         if record is None:
             return False
         self.session.delete(record)
@@ -56,16 +58,16 @@ class Repository:
         plan_id = uuid4()
         now = datetime.now(timezone.utc)
         plan_timestamp = planning_date if isinstance(planning_date, datetime) else datetime.combine(planning_date, datetime.min.time(), tzinfo=timezone.utc)
-        self.session.add(PlanRecord(id=str(plan_id), planning_date=plan_timestamp, status="GENERATED", baseline_json=json.dumps(baseline), proposal_json=json.dumps(proposal), created_at=now, updated_at=now))
+        self.session.add(PlanRecord(id=str(plan_id), user_id=self.user_id, planning_date=plan_timestamp, status="GENERATED", baseline_json=json.dumps(baseline), proposal_json=json.dumps(proposal), created_at=now, updated_at=now))
         self.audit(plan_id, "generated", {"provider": proposal.get("provider", "deterministic")})
         self.session.commit()
         return plan_id
 
     def get_plan(self, plan_id: UUID) -> PlanRecord | None:
-        return self.session.get(PlanRecord, str(plan_id))
+        return self.session.scalars(select(PlanRecord).where(PlanRecord.id == str(plan_id), PlanRecord.user_id == self.user_id)).first()
 
     def plans(self) -> list[PlanRecord]:
-        return list(self.session.scalars(select(PlanRecord).order_by(PlanRecord.created_at.desc())).all())
+        return list(self.session.scalars(select(PlanRecord).where(PlanRecord.user_id == self.user_id).order_by(PlanRecord.created_at.desc())).all())
 
     def audit(self, plan_id: UUID | None, action: str, details: dict) -> None:
         self.session.add(AuditRecord(plan_id=str(plan_id) if plan_id else None, action=action, details=json.dumps(details), created_at=datetime.now(timezone.utc)))
@@ -74,7 +76,7 @@ class Repository:
         return list(self.session.scalars(select(AuditRecord).where(AuditRecord.plan_id == str(plan_id)).order_by(AuditRecord.created_at)).all())
 
     def review(self, task_id: UUID, completed: bool, notes: str | None) -> None:
-        task = self.session.get(TaskRecord, str(task_id))
+        task = self.session.scalars(select(TaskRecord).where(TaskRecord.id == str(task_id), TaskRecord.user_id == self.user_id)).first()
         if task:
             task.status = "COMPLETED" if completed else "CARRIED_OVER"
             task.updated_at = datetime.now(timezone.utc)
