@@ -23,6 +23,20 @@
 			"command": "git add .vscode/tasks.json && GIT_EDITOR=true git rebase --continue",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Apply README update",
+			"type": "shell",
+			"command": "git checkout --theirs README.md && git add README.md && GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Finish README rebase",
+			"type": "shell",
+			"command": "git add -A && GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

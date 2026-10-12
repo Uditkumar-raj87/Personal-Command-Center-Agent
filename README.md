@@ -13,7 +13,6 @@ The current web experience includes:
 - Optimistic inbox updates for a quick capture loop
 - A visual distinction between available work, planning signals, and schedule review
 - Responsive navigation for desktop and smaller screens
-- An editable proposal timeline with drag-and-drop, keyboard reordering, inline times, overlap warnings, undo/revert, and audit history
 
 Run the web preview with `npm run dev --workspace apps/web`, then open `/capture`.
 
@@ -64,7 +63,7 @@ flowchart LR
 
 ### Current implementation boundary
 
-The deterministic engine, validated provider adapter, SQLAlchemy persistence, approval workflow, audit records, and web capture/review flow are implemented. SQLite is the local default; Docker Compose uses PostgreSQL through `DATABASE_URL`. API records are scoped to the authenticated bearer identity; local development uses `DEV_OWNER_ID` when `AUTH_REQUIRED=false`.
+The deterministic engine and provider-neutral structured planner are implemented. The local FastAPI development store is currently in memory so the first vertical slice is easy to run. SQLAlchemy models, an Alembic migration, Docker Compose, and the Postgres environment are scaffolded for the persistence milestone.
 
 ## Repository map
 
@@ -85,9 +84,8 @@ infra/                     Local Postgres, API, and web Docker Compose setup
 git clone <repository-url>
 cd Personal-Command-Center-Agent
 cp .env.example .env
+python -m pip install -e ".[dev]"
 ```
-
-For local development without Docker, use `DATABASE_URL=sqlite:///./command_center.db` in `.env`, then apply the schema with `alembic -c services/api/alembic.ini upgrade head`. Alembic is the schema authority; the API does not create tables during import.
 
 ### 2. Start the local stack
 
@@ -96,6 +94,18 @@ docker compose -f infra/docker-compose.yml up --build
 ```
 
 The web app is available at `http://localhost:3000`. The API is available at `http://localhost:8000/docs`.
+
+Check that the API is ready:
+
+```bash
+curl http://localhost:8000/healthz
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
 
 ### 3. Seed synthetic demo tasks
 
@@ -107,16 +117,31 @@ python services/api/scripts/seed_demo.py
 
 The seed creates 15 realistic but synthetic tasks and does not require private credentials or external services.
 
-### Frontend-only preview
+### Local preview without Docker
 
-When Docker is unavailable:
+Start the API in one terminal:
 
 ```bash
-npm install --prefix apps/web
-npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000
+python -m uvicorn services.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:3000/capture`. In a hosted development environment, forward the selected port through the editor’s Ports panel.
+Start the web app in a second terminal:
+
+```bash
+cd apps/web
+npm install
+npm run dev -- --hostname 0.0.0.0 --port 3000
+```
+
+Preview URLs:
+
+- Web dashboard: `http://localhost:3000/`
+- Task capture: `http://localhost:3000/capture`
+- Today view: `http://localhost:3000/today`
+- API documentation: `http://localhost:8000/docs`
+- API health: `http://localhost:8000/healthz`
+
+In a hosted development environment, forward ports `3000` and `8000` through the editor’s Ports panel. Run the web command from `apps/web`; this avoids npm workspace recursion in environments that do not support workspace commands.
 
 ## Deterministic planning baseline
 
@@ -169,15 +194,8 @@ The structured planner response adds a day summary, planned blocks, an optional 
 | --- | --- | --- |
 | `POST` | `/api/tasks` | Add a typed task to the inbox |
 | `GET` | `/api/tasks` | List captured tasks |
-| `GET/PATCH/DELETE` | `/api/tasks/{task_id}` | Read, edit, or delete a task |
-| `POST` | `/api/plans/generate` | Compare deterministic and provider plans |
-| `GET` | `/api/plans` and `/api/plans/{plan_id}` | List or retrieve plans |
-| `PATCH` | `/api/plans/{plan_id}/blocks` | Save reviewed block edits |
-| `POST` | `/api/plans/{plan_id}/approve` | Explicitly approve a plan |
-| `POST` | `/api/plans/{plan_id}/reject` | Reject a plan |
-| `POST` | `/api/plans/{plan_id}/review` | Record completion or carry-over decisions |
-| `GET` | `/api/plans/{plan_id}/audit` | Read the audit history |
-| `GET` | `/health` and `/ready` | Liveness and database readiness |
+| `POST` | `/api/plans/generate` | Compare deterministic and structured plans |
+| `POST` | `/api/plans/review` | Record completion or carry-over decisions |
 
 All plan proposals use Pydantic models. The review route only changes task status from an explicit user payload; it does not reschedule work autonomously.
 
@@ -209,7 +227,7 @@ The response is intentionally side by side:
 }
 ```
 
-Provider timeouts, authentication failures, retry exhaustion, malformed JSON, or unsafe plans fall back to the deterministic proposal with a non-secret `fallback_reason`. Every provider response is checked for task accounting, estimates, deadlines, overlaps, planning-window bounds, reasoning, and unsupported action claims.
+If structured validation fails, the API returns a 422 response with the deterministic baseline available for safe recovery. The intended production behavior is to show that fallback directly in the review interface rather than leave the user with an empty plan.
 
 ### Submit an end-of-day review
 
@@ -234,21 +252,23 @@ The review response reports completed and carried-over counts. It does not silen
 
 The model is an interpreter and drafting assistant. Permissions, validation, scheduling arithmetic, storage, and irreversible actions belong to normal application code.
 
+## Authentication and production configuration
+
+Local development keeps authentication disabled. For a hosted deployment, set `REQUIRE_AUTH=true` and configure either `AUTH_JWKS_URL` with `AUTH_ISSUER` and `AUTH_AUDIENCE` for OIDC/JWT validation, or `AUTH_HS256_SECRET` for a service-issued HS256 token. A trusted identity proxy may provide `X-Authenticated-User` only when `TRUST_PROXY_IDENTITY=true`; do not expose that mode directly to the public internet.
+
+The API also configures an explicit `ALLOWED_ORIGINS` list and exposes `/healthz` for load balancers. Do not use `.env.example` as a production secret file. Store database credentials, signing keys, and provider credentials in the hosting platform’s secret manager.
+
+The production baseline is `infra/docker-compose.production.yml`. It uses a persistent PostgreSQL volume, service restarts, a database health check, a read-only API filesystem, and a separate production web image. Schedule encrypted `pg_dump` backups outside the compose stack and verify restore procedures before accepting production traffic.
+
+Calendar and email providers are represented by provider-neutral contracts in `packages/integrations`. Concrete OAuth provider adapters and user-facing permission/revocation screens must be added before enabling external writes. The disabled providers fail explicitly rather than pretending an action succeeded.
+
 ## Quality checks
 
 ```bash
 pytest
-
-# Frontend typecheck and production build
 npm run typecheck
 npm run build
-
-# Browser flow (requires the API on port 8000)
-npx playwright install chromium
-npm run test:e2e
-
-# Trace-backed reports for every synthetic fixture
-python services/api/scripts/generate_evaluation_report.py
+npm run audit
 ```
 
 Fixtures cover overloaded days, conflicting deadlines, default estimates, low-energy windows, and balanced schedules. Core assertions check that every input task remains represented and that every proposal contains reasoning.
@@ -266,11 +286,12 @@ The planning evaluator is deliberately behavioral rather than stylistic. A plan 
 ### Useful development commands
 
 ```bash
-# Install frontend dependencies
-npm install --prefix apps/web
+# Install all Python and frontend dependencies
+python -m pip install -e ".[dev]"
+cd apps/web && npm install
 
 # Run the web app on a hosted-friendly interface
-npm run dev --prefix apps/web -- --hostname 0.0.0.0 --port 3000
+cd apps/web && npm run dev -- --hostname 0.0.0.0 --port 3000
 
 # Run the Python test suite
 pytest
@@ -279,15 +300,7 @@ pytest
 open http://localhost:8000/docs
 ```
 
-The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Pydantic, SQLAlchemy, Alembic, PostgreSQL, and development test dependencies.
-
-## Provider configuration
-
-The provider factory reads `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT_SECONDS`, and `LLM_MAX_RETRIES`. Use `LLM_PROVIDER=deterministic` for offline operation. Use `LLM_PROVIDER=openai-compatible` with a compatible base URL, model, and key for structured JSON proposals. Secrets are not logged.
-
-## Approval workflow
-
-Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED` states. Generation persists both the deterministic baseline and provider proposal. Edits create audit records, approval is explicit and idempotent, and reviews update task status only after the review payload is submitted. Calendar, email, social, scraping, browser automation, and autonomous external writes are not implemented.
+The repository uses separate JavaScript and Python dependency manifests. The web package is intentionally small; the Python package declares FastAPI, Uvicorn, Pydantic, SQLAlchemy, Alembic, PyJWT, and development test dependencies. The `pyproject.toml` package discovery configuration limits editable installation to the Python namespaces under `packages` and `services`.
 
 ## Roadmap
 
@@ -296,20 +309,24 @@ Plans move through `GENERATED`, `EDITED`, `APPROVED`, `REJECTED`, and `COMPLETED
 - [x] Responsive task capture experience
 - [x] Structured planner response boundary
 - [x] Synthetic evaluation fixtures
-- [x] Connect SQLAlchemy repositories to the API routes
-- [x] Add an OpenAI-compatible adapter with strict JSON validation
-- [x] Complete approval persistence and audit records
-- [x] Add drag-and-drop timeline editing and Playwright flows
-- [x] Add Playwright flows and trace-backed evaluation reports
-- [x] Add migration-owned schema, ownership-ready records, and CI verification
-- [ ] Add calendar and email integrations after permission and audit UX is mature
+- [ ] Connect SQLAlchemy repositories to the API routes
+- [ ] Add a real provider SDK adapter with strict JSON schema output
+- [ ] Complete interactive timeline adjustments and approval persistence
+- [ ] Add Playwright flows and trace-backed evaluation reports
+- [x] Add provider-neutral calendar and email contracts with safe disabled defaults
+- [ ] Add concrete calendar/email OAuth adapters after permission and audit UX is mature
+- [x] Add opt-in OIDC/JWT authentication, CORS controls, health checks, and a production Docker baseline
 
 ## Known limitations
 
-The API is identity-provider ready but does not bundle a login screen or validate provider tokens itself. Set `AUTH_REQUIRED=true` behind a trusted identity proxy or add JWT/OIDC verification before production deployment. Repository queries are owner-scoped, but tenant administration and account lifecycle remain deployment responsibilities. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+The current API task store is process-local and resets when the server restarts. SQLAlchemy models and the review-log migration exist, but repository wiring is not complete yet. The production compose file provides the deployment baseline, but it does not replace repository wiring, secret management, backup scheduling, or monitoring configuration.
 
-This project is not an autonomous calendar assistant. It does not send email, edit calendars, scrape websites, or make external write actions. Those integrations should only be added after permission scopes, review states, failure handling, and audit records are complete.
+The provider planner is intentionally a deterministic fallback until an LLM SDK adapter is configured. The agent package defines the structured response boundary and prompt responsibilities, but it does not yet call an external model. This keeps the first release usable without credentials and makes baseline behavior testable in isolation.
+
+The Today page is currently a visual approval placeholder. Database commits, drag-to-reorder interactions, inline time edits, audit-log persistence, and full TanStack Query state management are the next implementation slice. Missing duration estimates use the documented 30-minute default, while deadline conflicts and day overloads are surfaced rather than hidden.
+
+This project is not an autonomous calendar assistant. The current release does not send email or edit calendars: only provider contracts and explicit disabled implementations exist. Those integrations should only be enabled after permission scopes, review states, failure handling, and audit records are complete.
 
 ## License
 
-This repository is licensed under the MIT License. See [LICENSE](LICENSE).
+This repository is a personal portfolio project. Add a license before distributing it as a reusable package.
