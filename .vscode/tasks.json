@@ -86,6 +86,13 @@
 			"command": "npm run typecheck",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Inspect dependency changes",
+			"type": "shell",
+			"command": "git status --short --branch && git diff -- apps/web/package.json package.json apps/web/tsconfig.json package-lock.json | sed -n '1,240p'",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
