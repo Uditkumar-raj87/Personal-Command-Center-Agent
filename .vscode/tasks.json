@@ -51,6 +51,20 @@
 			"command": "git push origin main && git status --short --branch",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Inspect frontend audit",
+			"type": "shell",
+			"command": "npm view next version && npm audit --audit-level=high --json",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Update Next dependency",
+			"type": "shell",
+			"command": "npm install --workspace apps/web next@latest",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
