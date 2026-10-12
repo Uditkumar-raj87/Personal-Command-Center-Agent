@@ -37,6 +37,20 @@
 			"command": "git add -A && GIT_EDITOR=true git rebase --continue",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Restore local task changes",
+			"type": "shell",
+			"command": "git status --short --branch && git stash list && git stash pop",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Push main to origin",
+			"type": "shell",
+			"command": "git push origin main && git status --short --branch",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
