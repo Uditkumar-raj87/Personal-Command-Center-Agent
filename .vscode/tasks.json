@@ -93,6 +93,34 @@
 			"command": "git status --short --branch && git diff -- apps/web/package.json package.json apps/web/tsconfig.json package-lock.json | sed -n '1,240p'",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Inspect latest commit",
+			"type": "shell",
+			"command": "git --no-pager log -3 --oneline --decorate && git show --stat --oneline HEAD && git diff HEAD -- apps/web/package.json package-lock.json | sed -n '1,180p'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect generated config changes",
+			"type": "shell",
+			"command": "git diff -- apps/web/next-env.d.ts apps/web/tsconfig.json apps/web/tsconfig.tsbuildinfo | sed -n '1,220p'",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify git status",
+			"type": "shell",
+			"command": "git status --short --branch && git log -1 --oneline",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Push audit fix",
+			"type": "shell",
+			"command": "git push origin main && git status --short --branch",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
