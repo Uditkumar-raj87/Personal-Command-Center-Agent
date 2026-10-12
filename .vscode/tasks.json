@@ -65,6 +65,27 @@
 			"command": "npm install --workspace apps/web next@latest",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Run frontend build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run npm audit",
+			"type": "shell",
+			"command": "npm run audit",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run frontend typecheck",
+			"type": "shell",
+			"command": "npm run typecheck",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
