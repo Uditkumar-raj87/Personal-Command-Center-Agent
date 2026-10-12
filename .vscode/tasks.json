@@ -308,6 +308,69 @@
 			],
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Inspect rebase conflicts",
+			"type": "shell",
+			"command": "git status --short && printf '\\n--- conflict markers ---\\n' && grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' .env.example .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py || true",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Resolve rebase and push",
+			"type": "shell",
+			"command": "git checkout --ours .env.example .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py && git add .env.example .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py && GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Check rebase state",
+			"type": "shell",
+			"command": "git status --short && git diff --name-only --diff-filter=U && grep -R -n -E '^(<<<<<<<|=======|>>>>>>>)' .env.example .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py || true",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Resolve current conflict",
+			"type": "shell",
+			"command": "git checkout HEAD -- .env.example && grep -n -E '^(<<<<<<<|=======|>>>>>>>)' .env.example || true && sed -n '1,20p' .env.example",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Continue rebase",
+			"type": "shell",
+			"command": "git checkout HEAD -- .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py && git add .env.example .github/workflows/ci.yml README.md package.json pyproject.toml services/api/main.py && GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "List unresolved files",
+			"type": "shell",
+			"command": "git diff --name-only --diff-filter=U && git status --short",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Finish rebase",
+			"type": "shell",
+			"command": "GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect git index",
+			"type": "shell",
+			"command": "git ls-files -u && git status --porcelain=v2 && git rev-parse --git-path rebase-merge",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Stage resolved rebase",
+			"type": "shell",
+			"command": "git add -A && git status --short && GIT_EDITOR=true git rebase --continue",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }
